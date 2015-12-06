@@ -1,36 +1,54 @@
 #!/usr/bin/perl
 
-$lon = 17.63;
-$lat = 59.85;
+use LWP::Simple;
+
+my $data = get 'http://services.swpc.noaa.gov/text/aurora-nowcast-map.txt';
+
+
 
 #   1096 values covering 0 to 360 degrees in the horizontal (longitude) direction  (0.32846715 degrees/value)
 #   512 values covering -90 to 90 degrees in the vertical (latitude) direction  (0.3515625 degrees/value)
 #   Values range from 0 (little or no probability of visible aurora) to 100 (high probability of visible aurora)
 
-$xf = int($lon / 0.32846715)+180;
-$yf = int($lat / 0.3515625)+90;
+sub query {
+   my ($lon,$lat,$data) = @_;
+   open( DAT, '<', \$data );
+   my $xf = int(($lon+180) / 0.32846715);
+   my $yf = int(($lat+90) / 0.3515625);
 
-print "$xf $yf\n";
+   #print "$xf $yf\n";
 
-$i=1;
-$j=1;
+   my $i=1;
+   my $j=1;
+   my $val = '';
 
-
-while(<>){
-   chomp;
-   next if(m/^\s*#/);
-   @a = split(/\s+/);
-   for($j=1;$j < 1096;$j++){
-      if($a[$j] > 0){
-         $lo = ($j * 0.32846715)-180;
-         $la = ($i * 0.3515625)-90;
-         $al = $a[$j] / 100.0;
-#         print "<wpt lat=\"$la\" lon=\"$lo\" >\n";
-#         print "$lo,$la,$al\n";
+   while(<DAT>){
+      chomp;
+      next if(m/^\s*#/);
+      @a = split(/\s+/);
+      for($j=1;$j < 1096;$j++){
+         if($i == $yf && $j == $xf){
+	    $val = $a[$j];
+         }
       }
+      $i++;
    }
-   $i++;
-#   print "$j $i\n";
+   return $val
 }
 
+#Uppsala
+$lon = 17.63;
+$lat = 59.85;
 
+printf("Uppsala %d\n",query($lon,$lat,$data));
+
+#Canada
+$lon = -100;
+$lat = 57;
+
+printf("Canada %d\n",query($lon,$lat,$data));
+
+$lon = 18.816667;
+$lat = 68.35;
+
+printf("Abisko %d\n",query($lon,$lat,$data));
